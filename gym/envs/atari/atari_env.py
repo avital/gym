@@ -2,6 +2,7 @@ import collections
 import numpy as np
 import os
 import gym
+import random
 from gym import error, spaces
 from gym import utils
 from gym.utils import seeding
@@ -42,6 +43,8 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self.frameskip = frameskip
         self.ale = atari_py.ALEInterface()
         self.viewer = None
+
+        self._obs_buffer = []
 
         # Tune (or disable) ALE's action repeat:
         # https://github.com/openai/gym/issues/349
@@ -102,6 +105,13 @@ class AtariEnv(gym.Env, utils.EzPickle):
         for _ in range(num_steps):
             reward += self.ale.act(action)
         ob = self._get_obs()
+
+        self._obs_buffer.append(ob)
+        self._obs_buffer = self._obs_buffer[-2:]
+        if random.uniform(0, 1) < 0.9:
+            ob = ob
+        else:
+            ob = self._obs_buffer[0]
 
         return ob, reward, self.ale.game_over(), {}
 
