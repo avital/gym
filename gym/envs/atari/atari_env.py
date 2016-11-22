@@ -23,7 +23,7 @@ def to_ram(ale):
 class AtariEnv(gym.Env, utils.EzPickle):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, game='pong', obs_type='ram', frameskip=(2, 5), repeat_action_probability=0., action_delay=(30, 290)):
+    def __init__(self, game='pong', obs_type='ram', frameskip=(2, 5), repeat_action_probability=0., action_delay=60):
         """Frameskip and action_delay should be either a tuple (indicating a
         random range to choose from, with the top value exclude), or
         an int.
@@ -54,7 +54,6 @@ class AtariEnv(gym.Env, utils.EzPickle):
         self._buffer = np.empty((screen_height, screen_width, 4), dtype=np.uint8)
 
         self.action_delay = action_delay
-        self._future_actions = [0] # NOOP
 
         self._action_set = self.ale.getMinimalActionSet()
         self.action_space = spaces.Discrete(len(self._action_set))
@@ -86,7 +85,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
 
     def _delayed_action(self, action):
         self._future_actions.append(action)
-        delay = self._sample_action_delay()
+        delay = 0 # self._sample_action_delay()
         bounded_delay = min(delay, len(self._future_actions)-1)
         next_action = self._future_actions[bounded_delay]
         self._future_actions = self._future_actions[bounded_delay+1:]
@@ -127,6 +126,7 @@ class AtariEnv(gym.Env, utils.EzPickle):
     # return: (states, observations)
     def _reset(self):
         self.ale.reset_game()
+        self._future_actions = [0] * self._sample_action_delay() # NOOP
         return self._get_obs()
 
     def _render(self, mode='human', close=False):
